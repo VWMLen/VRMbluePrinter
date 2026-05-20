@@ -1,0 +1,2 @@
+# VRMbluePrinter
+VRMモデルをカスタマイズして出力するツール
