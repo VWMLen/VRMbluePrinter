@@ -1,0 +1,126 @@
+詳細設計書（moduleフォルダ編） - 技術詳細版
+Assets/Script/module フォルダ内に格納されている各機能モジュールの詳細設計です。
+
+1. モデル情報編集 (modelInfoEdit.cs)
+クラス名: 
+ModelInfoEdit
+
+mainWindowSetting
+概要: 編集メインウィンドウの初期化とイベント登録。
+引数:
+UIDocument UID: UIドキュメントのルート。
+ref VisualElement mainWindowElement: 表示対象となるメインウィンドウ要素の参照。
+返却内容: resultInfo: 処理結果（成功・失敗）。
+処理解説:
+Constants.pnlMainModelInfoWindow を取得し、mainWindowElement に割り当てる。
+4つの主要ボタン（サムネ、情報、人格、ライセンス）を取得し、クリック時にサブメニューを切り替えるイベントを設定する。
+SubMenuModelInfoSetting
+概要: カテゴリ別の編集サブメニュー表示。
+引数:
+string btnName: クリックされたボタンの名前。
+UIDocument UID: UIドキュメント。
+返却内容: resultInfo: 処理結果。
+処理解説:
+サービス層からモデル情報を取得する。
+全てのサブメニューパネルを一旦非表示にする。
+btnName に応じたパネルを表示し、現在の値をテキストフィールド等にセットする。
+値が編集された際のデータ反映用コールバックを登録する。
+setThimbanail
+概要: サムネイル画像の読み込みと反映。
+引数: UIDocument uID: UIドキュメント。
+返却内容: なし (void)。
+処理解説:
+ファイルダイアログを表示し、ユーザーに画像ファイルを選択させる。
+選択された画像（バイナリ）をモデルデータの ThumbnailData に保存し、UIの背景画像としても適用する。
+getAllowedUserUssageLicenseToInt
+概要: ライセンス文字列の数値変換。
+引数: string newValue: 選択されたライセンス文字列。
+返却内容: int: 対応する列挙型の数値。
+処理解説: "Everyone" や "Only Author" などの文字列を判定し、VRM規格の数値に変換する。
+2. 表情（ブレンドシェイプ）編集 (modelBlendShapeEdit.cs)
+クラス名: 
+ModelBlendShapeEdit
+
+mainWindowSetting
+概要: 表情編集用メインパネルの初期化。
+引数:
+UIDocument UID: UIドキュメント。
+ref VisualElement mainWindowElement: 表示対象要素の参照。
+返却内容: resultInfo: 処理結果。
+処理解説: 表情編集専用のパネルを mainWindowElement にアタッチする。
+DdlModelBlendShapePanel
+概要: カテゴリ選択（喜怒哀楽等）の設定。
+引数:
+modelInfo modelInfo: 現在のモデル情報。
+ref VisualElement mainMenu: メインメニュー要素の参照。
+UIDocument UID: UIドキュメント。
+返却内容: resultInfo: 処理結果。
+処理解説: 表情カテゴリの選択UIを表示し、後続のスライダー構築の準備を行う。
+SubMenuBlendShapeSetting
+概要: スライダー群の動的生成。
+引数:
+UIDocument UID: UIドキュメント。
+string newValue: 選択された表情カテゴリ名。
+返却内容: resultInfo: 処理結果。
+処理解説: モデルの 
+SkinnedMeshRenderer
+ からブレンドシェイプキーを抽出し、UI上に値を調整するためのスライダーを動的に生成・配置する。
+OnBlendShapeSliderValueChanged
+概要: スライダー操作時の表情リアルタイム反映。
+引数:
+string target: 操作対象のターゲット名。
+UIDocument UI: UIドキュメント。
+返却内容: なし (void)。
+処理解説: ユーザーが動かしたスライダーの値を取得し、モデルの SetBlendShapeWeight に即座に適用して形状を変化させる。
+AddOrUpdateBlendShapeClip
+概要: 表情設定の保存・確定。
+引数:
+UIDocument UID: UIドキュメント。
+GameObject targetObject: 操作対象のVRMモデル。
+返却内容: なし (void)。
+処理解説: 現在のスライダー値を BlendShapeBinding 形式にまとめ、VRMの表情クリップとしてアバターデータに保存・更新する。
+3. カラー編集 (modelColorEdit.cs)
+クラス名: 
+ModelColorEdit
+
+mainWindowSetting
+概要: カラー編集メインパネルの初期化。
+引数: UIDocument UID, ref VisualElement mainWindowElement。
+返却内容: resultInfo: 処理結果。
+setModelColorTexter
+概要: 編集した色のマテリアルへの一括適用。
+引数: なし。
+返却内容: なし (void)。
+処理解説: 設定された色情報を元にタイル状のテクスチャアトラスを再生成し、全メッシュへ適用して色を更新する。
+CreateTempTexture
+概要: タイル状テクスチャアトラスの生成。
+引数: List<UnityEngine.Color> colors: 適応する色のリスト。
+返却内容: Texture2D: 生成された新しいテクスチャ。
+処理解説: 指定された色リストをマトリックス状にピクセル配置したテクスチャファイルをメモリ上に構築する。
+setMaterial
+概要: 生成テクスチャのマテリアル割り当て。
+引数:
+modelInfoSettingMesh mesh: 対象メッシュ情報。
+Texture2D texture2D: メインテクスチャ。
+Texture2D emissionMap: エミッションテクスチャ。
+返却内容: なし (void)。
+処理解説: モデルの各部位のレンダラーに対し、生成したテクスチャとエミッションマップをセットする。
+4. アイコン編集 (modelIconEdit.cs)
+クラス名: 
+ModelIconEdit
+
+DdlModelIconPanel
+概要: アイコン編集パネルとイベントの構築。
+引数: modelInfo modelInfo, ref VisualElement mainMenu, UIDocument UID。
+返却内容: resultInfo: 処理結果。
+処理解説: ロードボタンと座標調整スライダーのイベントを登録する。
+setIconTexter
+概要: アイコン用画像ファイルのロード処理。
+引数: UIDocument uID: UIドキュメント。
+返却内容: resultInfo: 処理結果。
+処理解説: ファイルダイアログから画像を選択、バイナリとして読み込み、内部データとして保持する。
+setIconApply
+概要: スクロール設定と画像のマテリアル適用。
+引数: UIDocument uID: UIドキュメント。
+返却内容: なし (void)。
+処理解説: 選択されたアイコン画像を対象マテリアルにセットし、スライダーで指定されたXY方向のUVスクロール値を適用する。

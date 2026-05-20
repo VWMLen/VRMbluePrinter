@@ -1,0 +1,111 @@
+# 詳細設計書 - modelフォルダ (V-C-S構成)
+
+本ドキュメントは、`Assets/Script/model` フォルダ内の機能を、View-Controller-Service (V-C-S) のアーキテクチャ関係に基づいて整理した詳細設計書です。
+
+---
+
+## 1. 汎用機能 (General Purpose)
+共通的なメニュー制御、設定の保存・読込、モデルのエクスポートなどを担当します。
+
+### [View] `viewGeneralPurpose`
+- **概要**: メインメニュー全体のUIバインドと、ユーザー入力に応じたControllerの呼び出しを制御する。
+- **処理概要**:
+    - `Start()`: UI要素のロード、ドロップダウンやボタンへのイベント登録を行う。
+    - `MainMenuSetting()`: ドロップダウン変更時に `controllerGeneralPurpose.DllMenu` を呼び出し、UI表示を更新する。
+    - `ModelExport()`: `controllerGeneralPurpose.ModelExport` を呼び出し、結果をメッセージウィンドウに表示する。
+
+### [Controller] `controllerGeneralPurpose`
+- **概要**: View層からの要求をビジネスロジック（Service層）へ仲介する。
+- **処理概要**:
+    - `DllMenu()`: 選択された機能に対応するモジュールを呼び出し、UIの切り替えを行う。
+    - `ModelExport()`: `serviceGeneralPurpose.ModelExport` を実行する。
+    - `IniSave()` / `IniLoad()`: `serviceGeneralPurpose` の保存・読込処理を呼び出す。
+
+### [Service] `serviceGeneralPurpose`
+- **概要**: 汎用機能の実処理（ファイルI/O、テクスチャ生成、マテリアル更新）を担当する。
+- **処理概要**:
+    - `ModelExport()`: `VRMExporter` を使用して、現在のモデルをファイル出力する。
+    - `IniSave()` / `IniLoad()`: 編集したモデル情報をINIファイルとして永続化・復元する。
+    - `setModelColorTexter()`: カラー設定から `Texture2D` を生成し、モデルのマテリアルへ反映する。
+
+---
+
+## 2. モデル選択機能 (Model Select)
+設計図モデルの一覧表示と、選択されたモデルのロードを担当します。
+
+### [View] `vModelSelectWindow`
+- **概要**: モデル設計図一覧を表示し、ユーザーがモデルを選択した際のイベントを管理する。
+- **処理概要**:
+    - `settingModelListView()`: `cModelSelectWindow` を介してボタン情報を生成し、クリック時にモデルロード処理（`sVrmLoader.LoadVRMModel`）を開始する。
+
+### [Controller] `cModelSelectWindow`
+- **概要**: モデル選択ViewとServiceの仲介を行う。
+- **処理概要**:
+    - `settingModelListView()`: `sModelSelectWindow` のUI生成ロジックを呼び出す。
+
+### [Service] `sModelSelectWindow`
+- **概要**: モデル選択UIの要素（ボタンなど）を具体的に生成するロジation。
+- **処理概要**:
+    - `settingButtonModel()`: `modelInfo` のリストを元に、サムネイル画像を含む `VisualElement` を動的に生成する。
+
+---
+
+## 3. システムウィンドウ機能 (System Window)
+ユーザーへの通知メッセージや確認ダイアログの表示を担当します。
+
+### [View] `vSystemWindow`
+- **概要**: メッセージウィンドウの表示・非表示、SEの再生を管理する。
+- **処理概要**:
+    - `SettingMessage()`: `cSystemWindow` を介して、メッセージ内容やボタンテキストをセットする。
+    - `showMessageWindow()`: ウィンドウを表示し、効果音を鳴らす。
+
+### [Controller] `cSystemWindow`
+- **概要**: システムウィンドウViewとServiceの橋渡しを行う。
+- **処理概要**:
+    - `SettingMessage()`: `sSystemWindow` のメッセージ設定処理を呼び出す。
+
+### [Service] `sSystemWindow`
+- **概要**: メッセージウィンドウの具体的な表示テキスト設定ロジック。
+- **処理概要**:
+    - `SettingMessage()`: 渡された `systemWindowInfo` に基づき、UI要素のテキスト内容を更新する。
+
+---
+
+## 4. VRMロード機能 (VRM Loader)
+VRMモデルファイルの読み込みと、シーン内でのモデル・カメラ操作を担当します。
+
+### [View] `vVrmLoader`
+- **概要**: 3D空間上のモデル・カメラの直接的な操作（回転、移動、ズーム）を制御する。
+- **処理概要**:
+    - `Update()`: マウス入力（中/右ボタン、ホイール）やキー入力を監視し、カメラの位置やモデルの回転を更新する。
+
+### [Controller] `cVrmLoader`
+- **概要**: モデル読み込み後の初期化処理やカメラ制御を仲介する。
+- **処理概要**:
+    - `setVrmGameObject()`: Service層へ対象オブジェクトを登録する。
+    - `cameraModelReset()`: Service層の座標リセット処理を呼び出す。
+
+### [Service] `sVrmLoader`
+- **概要**: VRMの非同期読み込み実体と、モデル・カメラの座標制御ロジック。
+- **処理概要**:
+    - `LoadVRMModel()`: 指定されたパスからモデルを読み込み、シーンに配置・初期化（座標設定やAnimeController設定）を行う。
+    - `cameraModelReset()`: カメラとモデルのTransformを規定の初期値に戻す。
+
+---
+
+## 5. 各機能/メソッドの詳細
+
+### クラス: `serviceGeneralPurpose` (詳細)
+| 機能名 | 概要 | 引数 | 返却内容 | 処理概要 |
+| :--- | :--- | :--- | :--- | :--- |
+| `ModelSelect` | モデル設計図の走査 | `ref List<modelInfo>` | `resultInfo` | `/Assets/Model` フォルダ以下の設計図XMLを順次読み込む。 |
+| `ModelExport` | モデルの出力 | なし | `resultInfo` | 保存先ダイアログを表示し、現在のVRMモデルを書き出す。 |
+| `IniLoad` | 設定読込 | なし | `resultInfo` | INIファイルから編集状態を復元し、モデルのマテリアルや表情を更新する。 |
+
+### クラス: `sVrmLoader` (詳細)
+| 機能名 | 概要 | 引数 | 返却内容 | 処理概要 |
+| :--- | :--- | :--- | :--- | :--- |
+| `LoadVRMModel` | 非同期ロード | `string path` | なし (async) | ファイルを読み込み、`VrmUtility` を介してシーン上にモデルを展開する。 |
+| `cameraModelReset` | 座標初期化 | `ref Camera`, `ref GameObject` | `resultInfo` | カメラとモデルを所定のホームポジションへ戻す。 |
+
+*(他クラスについても同様の構成で適宜記載。)*
